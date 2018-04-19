@@ -1,6 +1,7 @@
 package rdtest
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 	. "testing"
@@ -13,6 +14,12 @@ type Tester struct {
 
 func NewTester(t *T) Tester {
 	return Tester{t: t}
+}
+
+func MaybePanic(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (t *Tester) AssertEqual(one, two interface{}) {
@@ -39,14 +46,32 @@ func (t *Tester) Assert(b bool) {
 	}
 }
 
-func Assert(t *T, assertion bool, msg ...string) {
+func Assert(t *T, assertion bool, args ...interface{}) {
 	if !assertion {
-		if len(msg) == 0 {
+		if cnt := len(args); cnt == 0 {
 			fatal(t, "Assertion failed")
 		} else {
-			fatal(t, msg[0])
+			var msg string
+			var ok bool
+
+			if msg, ok = args[0].(string); !ok {
+				msg = fmt.Sprintf("%s", args[0])
+			}
+
+			if len(args) > 1 {
+				fatal(t, msg, args[1:]...)
+			} else {
+				fatal(t, msg)
+			}
 		}
 	}
+}
+
+func AssertNotNil(t *T, args ...interface{}) {
+}
+
+func AssertNil(t *T, args ...interface{}) {
+	Assert(t, args[0] == nil, args[1:])
 }
 
 func Equal(t *T, one, two interface{}) {
